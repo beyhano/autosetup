@@ -1,6 +1,9 @@
 # General Tool Installer
 
-Bu proje, Linux sistemlerde çeşitli yazılım araçlarını (Go, Rust, Node.js, vb.) hızlı ve modüler bir şekilde kurmak için tasarlanmış genel amaçlı bir Bash betiğidir.
+Bu proje, **Ubuntu, Debian ve türevleri** (apt paket yöneticisi kullanan sistemler) üzerinde çeşitli yazılım araçlarını (Go, Rust, Node.js, vb.) hızlı ve modüler bir şekilde kurmak için tasarlanmış genel amaçlı bir Bash betiğidir.
+
+> **Not:** Şu an için sadece `apt` tabanlı dağıtımlar desteklenmektedir.
+
 
 ## Özellikler
 
