@@ -94,7 +94,8 @@ install_system_deps() {
         python3 \
         python3-dev \
         python3-virtualenv \
-        supervisor
+        supervisor \
+        php-cli
     
     if [ $? -ne 0 ]; then
         log_error "Failed to install system dependencies."

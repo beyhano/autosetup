@@ -6,7 +6,7 @@ Bu proje, Linux sistemlerde çeşitli yazılım araçlarını (Go, Rust, Node.js
 
 - **Modüler Yapı:** İndirme, çıkarma ve PATH güncelleme işlemleri için ayrı fonksiyonlar kullanılır.
 - **Dil Desteği:** Go ve Rust dillerini otomatik olarak kurar ve yapılandırır.
-- **Sistem Bağımlılıkları:** `linux.md` ve ek gereksinimlere göre `libvips-dev`, `pkg-config`, `git`, `curl`, `wget`, `build-essential`, `python3`, `python3-dev`, `python3-virtualenv` ve `supervisor` gibi paketleri otomatik kurar.
+- **Sistem Bağımlılıkları:** `linux.md` ve ek gereksinimlere göre `libvips-dev`, `pkg-config`, `git`, `curl`, `wget`, `build-essential`, `python3`, `python3-dev`, `python3-virtualenv`, `supervisor` ve `php-cli` gibi paketleri otomatik kurar.
 
 - **Akıllı İndirme:** Dosya zaten indirilmişse tekrar indirmez.
 - **Güvenli PATH Güncelleme:** `~/.bashrc` dosyasını kontrol eder, eğer yol zaten ekliyse tekrar eklemez.
