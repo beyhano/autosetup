@@ -155,13 +155,28 @@ install_rust() {
 
 # --- Main Execution ---
 
-# Check for dependencies needed by the script itself
-for cmd in wget tar sudo grep curl; do
-    if ! command -v $cmd &> /dev/null; then
-        log_error "Dependency '$cmd' is missing. Please install it."
-        exit 1
+# Check for and bootstrap core dependencies needed by the script itself
+bootstrap_dependencies() {
+    local missing_deps=()
+    for cmd in wget tar sudo grep curl; do
+        if ! command -v $cmd &> /dev/null; then
+            missing_deps+=("$cmd")
+        fi
+    done
+
+    if [ ${#missing_deps[@]} -gt 0 ]; then
+        log_info "Missing core dependencies: ${missing_deps[*]}. Attempting to install..."
+        sudo apt-get update
+        sudo apt-get install -y "${missing_deps[@]}"
+        
+        if [ $? -ne 0 ]; then
+            log_error "Failed to install required dependencies: ${missing_deps[*]}. Please install them manually."
+            exit 1
+        fi
     fi
-done
+}
+
+bootstrap_dependencies
 
 # 1. Install System Dependencies
 install_system_deps
