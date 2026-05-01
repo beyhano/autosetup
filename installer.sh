@@ -5,7 +5,61 @@
 # ==============================================================================
 # This script provides a modular way to download, install, and configure
 # various software tools and system dependencies.
+# Supports: Ubuntu/Debian (apt) and Alpine Linux (apk).
 # ==============================================================================
+
+# --- OS Detection & Package Manager Abstraction ---
+
+PKG_MANAGER=""
+PKG_UPDATE=""
+PKG_INSTALL=""
+PKG_INSTALL_ARGS=""
+PROFILE_FILE="$HOME/.bashrc"
+SUDO_CMD="sudo"
+
+detect_os() {
+    if [ -f /etc/alpine-release ]; then
+        PKG_MANAGER="apk"
+        PKG_UPDATE="apk update"
+        PKG_INSTALL="apk add"
+        PKG_INSTALL_ARGS="--no-cache"
+        PROFILE_FILE="$HOME/.profile"
+        # Alpine may not have sudo; fall back to direct root
+        if ! command -v sudo > /dev/null 2>&1; then
+            SUDO_CMD=""
+        fi
+        log_info "Detected Alpine Linux (apk)"
+    elif command -v apt-get > /dev/null 2>&1; then
+        PKG_MANAGER="apt"
+        PKG_UPDATE="apt-get update"
+        PKG_INSTALL="apt-get install -y --no-install-recommends"
+        PKG_INSTALL_ARGS=""
+        PROFILE_FILE="$HOME/.bashrc"
+        SUDO_CMD="sudo"
+        log_info "Detected Debian/Ubuntu (apt)"
+    else
+        log_error "Unsupported distribution. Only apt (Debian/Ubuntu) and apk (Alpine) are supported."
+        exit 1
+    fi
+}
+
+# Map Debian package names to Alpine equivalents
+map_pkg() {
+    local pkg=$1
+    if [ "$PKG_MANAGER" = "apk" ]; then
+        case "$pkg" in
+            pkg-config)       echo "pkgconfig" ;;
+            libvips-dev)      echo "vips-dev" ;;
+            build-essential)  echo "build-base" ;;
+            python3-virtualenv) echo "py3-virtualenv" ;;
+            python3-dev)      echo "python3-dev" ;;
+            php-cli)          echo "php83-cli" ;;
+            *)                echo "$pkg" ;;
+        esac
+    else
+        echo "$pkg"
+    fi
+}
 
 # --- Helper Functions ---
 
@@ -105,13 +159,13 @@ install_tarball() {
 
     if [ "$remove_old" = true ]; then
         log_info "Removing old installation at $target_dir..."
-        run_cmd sudo rm -rf "$target_dir"
+        run_cmd $SUDO_CMD rm -rf "$target_dir"
     fi
 
     log_info "Extracting $tarball to $(dirname "$target_dir")..."
     # Ensure parent directory exists
-    run_cmd sudo mkdir -p "$(dirname "$target_dir")"
-    run_cmd sudo tar -C "$(dirname "$target_dir")" -xzf "$tarball"
+    run_cmd $SUDO_CMD mkdir -p "$(dirname "$target_dir")"
+    run_cmd $SUDO_CMD tar -C "$(dirname "$target_dir")" -xzf "$tarball"
     
     if [ $? -ne 0 ]; then
         log_error "Failed to extract $tarball"
@@ -120,10 +174,10 @@ install_tarball() {
     return 0
 }
 
-# Add a directory to PATH in .bashrc if not already present
+# Add a directory to PATH in profile file if not already present
 update_bash_path() {
     local bin_path=$1
-    local profile_file="${2:-$HOME/.bashrc}"
+    local profile_file="${2:-$PROFILE_FILE}"
     local path_line="export PATH=\$PATH:$bin_path"
 
     if [ ! -f "$profile_file" ]; then
@@ -142,26 +196,34 @@ update_bash_path() {
 # --- System Dependencies ---
 
 install_system_deps() {
-    log_info "--- Installing System Dependencies (apt) ---"
+    log_info "--- Installing System Dependencies ($PKG_MANAGER) ---"
     
     # Based on linux.md and additional requirements
     log_info "Updating package lists..."
-    run_cmd sudo apt-get update
+    run_cmd $SUDO_CMD $PKG_UPDATE
     
     log_info "Installing system packages..."
-    run_cmd sudo apt-get install -y --no-install-recommends \
-        ca-certificates \
-        git \
-        pkg-config \
-        libvips-dev \
-        curl \
-        wget \
-        build-essential \
-        python3 \
-        python3-dev \
-        python3-virtualenv \
-        supervisor \
+    local pkgs=(
+        ca-certificates
+        git
+        pkg-config
+        libvips-dev
+        curl
+        wget
+        build-essential
+        python3
+        python3-dev
+        python3-virtualenv
+        supervisor
         php-cli
+    )
+    
+    local mapped_pkgs=()
+    for p in "${pkgs[@]}"; do
+        mapped_pkgs+=("$(map_pkg "$p")")
+    done
+    
+    run_cmd $SUDO_CMD $PKG_INSTALL $PKG_INSTALL_ARGS "${mapped_pkgs[@]}"
     
     if [ $? -ne 0 ]; then
         log_error "Failed to install system dependencies."
@@ -232,11 +294,18 @@ install_rust() {
 # Check for and bootstrap core dependencies needed by the script itself
 bootstrap_dependencies() {
     local missing_deps=()
-    for cmd in tar sudo grep; do
+    for cmd in tar grep; do
         if ! command -v $cmd &> /dev/null; then
             missing_deps+=("$cmd")
         fi
     done
+
+    # sudo is only required on non-Alpine systems
+    if [ "$PKG_MANAGER" != "apk" ]; then
+        if ! command -v sudo &> /dev/null; then
+            missing_deps+=("sudo")
+        fi
+    fi
 
     if ! command -v wget &> /dev/null; then
         missing_deps+=("wget")
@@ -248,8 +317,8 @@ bootstrap_dependencies() {
 
     if [ ${#missing_deps[@]} -gt 0 ]; then
         log_info "Missing core dependencies: ${missing_deps[*]}. Attempting to install..."
-        run_cmd sudo apt-get update
-        run_cmd sudo apt-get install -y "${missing_deps[@]}"
+        run_cmd $SUDO_CMD $PKG_UPDATE
+        run_cmd $SUDO_CMD $PKG_INSTALL $PKG_INSTALL_ARGS "${missing_deps[@]}"
         
         if [ $? -ne 0 ]; then
             log_error "Failed to install required dependencies: ${missing_deps[*]}. Please install them manually."
@@ -259,6 +328,8 @@ bootstrap_dependencies() {
 }
 
 parse_args "$@"
+
+detect_os
 
 bootstrap_dependencies
 
@@ -272,15 +343,15 @@ install_rust
 log_info "Installation process completed."
 
 # Apply changes to the current script environment
-if [ -f "$HOME/.bashrc" ]; then
-    log_info "Sourcing $HOME/.bashrc..."
+if [ -f "$PROFILE_FILE" ]; then
+    log_info "Sourcing $PROFILE_FILE..."
     if [ "$DRY_RUN" = true ]; then
-        log_info "[DRY-RUN] Would source $HOME/.bashrc"
+        log_info "[DRY-RUN] Would source $PROFILE_FILE"
     else
-        source "$HOME/.bashrc"
+        source "$PROFILE_FILE"
     fi
 fi
 
 log_info "All tools are installed and PATH is updated."
-log_info "NOTE: If you ran this script as './installer.sh', please run 'source ~/.bashrc' MANUALLY to use the tools in this session."
+log_info "NOTE: If you ran this script as './installer.sh', please run 'source $PROFILE_FILE' MANUALLY to use the tools in this session."
 log_info "Alternatively, you can run the script as 'source ./installer.sh' next time."
