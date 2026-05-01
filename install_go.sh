@@ -2,12 +2,42 @@
 
 # Go Installation Script
 # Based on instructions from go.md
+# Supports: Ubuntu/Debian (apt), Alpine Linux (apk), Arch Linux (pacman)
 
 GO_VERSION="1.26.2"
 GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
 DOWNLOAD_URL="https://go.dev/dl/${GO_TARBALL}"
 
 echo "Starting Go installation (version ${GO_VERSION})..."
+
+# --- OS Detection ---
+detect_pkg_manager() {
+    if [ -f /etc/alpine-release ]; then
+        PKG_UPDATE="apk update"
+        PKG_INSTALL="apk add --no-cache"
+        PROFILE_FILE="$HOME/.profile"
+        SUDO_CMD=""
+        command -v sudo > /dev/null 2>&1 && SUDO_CMD="sudo"
+        echo "Detected Alpine Linux (apk)"
+    elif command -v pacman > /dev/null 2>&1; then
+        PKG_UPDATE="pacman -Sy --noconfirm"
+        PKG_INSTALL="pacman -S --noconfirm --needed"
+        PROFILE_FILE="$HOME/.bashrc"
+        SUDO_CMD="sudo"
+        echo "Detected Arch Linux (pacman)"
+    elif command -v apt-get > /dev/null 2>&1; then
+        PKG_UPDATE="apt-get update"
+        PKG_INSTALL="apt-get install -y --no-install-recommends"
+        PROFILE_FILE="$HOME/.bashrc"
+        SUDO_CMD="sudo"
+        echo "Detected Debian/Ubuntu (apt)"
+    else
+        echo "Error: Unsupported distribution."
+        exit 1
+    fi
+}
+
+detect_pkg_manager
 
 bootstrap_download_tools() {
     local missing_deps=()
@@ -22,7 +52,7 @@ bootstrap_download_tools() {
 
     if [ ${#missing_deps[@]} -gt 0 ]; then
         echo "Installing missing download dependencies: ${missing_deps[*]}..."
-        sudo apt-get update && sudo apt-get install -y "${missing_deps[@]}"
+        $SUDO_CMD $PKG_UPDATE && $SUDO_CMD $PKG_INSTALL "${missing_deps[@]}"
     fi
 }
 
@@ -53,7 +83,7 @@ fi
 
 # 2. Remove previous installation and extract
 echo "Removing any previous Go installation and extracting to /usr/local..."
-sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf "$GO_TARBALL"
+$SUDO_CMD rm -rf /usr/local/go && $SUDO_CMD tar -C /usr/local -xzf "$GO_TARBALL"
 
 if [ $? -ne 0 ]; then
     echo "Error: Failed to extract Go."
@@ -62,7 +92,6 @@ fi
 
 # 3. Add to PATH
 PATH_LINE='export PATH=$PATH:/usr/local/go/bin'
-PROFILE_FILE="$HOME/.bashrc"
 
 if ! grep -q "/usr/local/go/bin" "$PROFILE_FILE"; then
     echo "Adding Go to PATH in $PROFILE_FILE..."

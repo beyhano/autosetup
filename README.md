@@ -1,8 +1,8 @@
 # General Tool Installer
 
-Bu proje, **Ubuntu, Debian ve türevleri** (apt paket yöneticisi kullanan sistemler) üzerinde çeşitli yazılım araçlarını (Go, Rust, Node.js, vb.) hızlı ve modüler bir şekilde kurmak için tasarlanmış genel amaçlı bir Bash betiğidir.
+Bu proje, **Ubuntu/Debian (apt), Alpine Linux (apk) ve Arch Linux (pacman)** üzerinde çeşitli yazılım araçlarını (Go, Rust, Node.js, vb.) hızlı ve modüler bir şekilde kurmak için tasarlanmış genel amaçlı bir Bash betiğidir.
 
-> **Not:** Şu an için sadece `apt` tabanlı dağıtımlar desteklenmektedir.
+> **Desteklenen Dağıtımlar:** Debian/Ubuntu (apt), Alpine Linux (apk), Arch Linux (pacman)
 
 
 ## Özellikler

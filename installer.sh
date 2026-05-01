@@ -5,7 +5,7 @@
 # ==============================================================================
 # This script provides a modular way to download, install, and configure
 # various software tools and system dependencies.
-# Supports: Ubuntu/Debian (apt) and Alpine Linux (apk).
+# Supports: Ubuntu/Debian (apt), Alpine Linux (apk), and Arch Linux (pacman).
 # ==============================================================================
 
 # --- OS Detection & Package Manager Abstraction ---
@@ -29,6 +29,14 @@ detect_os() {
             SUDO_CMD=""
         fi
         log_info "Detected Alpine Linux (apk)"
+    elif command -v pacman > /dev/null 2>&1; then
+        PKG_MANAGER="pacman"
+        PKG_UPDATE="pacman -Sy --noconfirm"
+        PKG_INSTALL="pacman -S --noconfirm --needed"
+        PKG_INSTALL_ARGS=""
+        PROFILE_FILE="$HOME/.bashrc"
+        SUDO_CMD="sudo"
+        log_info "Detected Arch Linux (pacman)"
     elif command -v apt-get > /dev/null 2>&1; then
         PKG_MANAGER="apt"
         PKG_UPDATE="apt-get update"
@@ -38,27 +46,42 @@ detect_os() {
         SUDO_CMD="sudo"
         log_info "Detected Debian/Ubuntu (apt)"
     else
-        log_error "Unsupported distribution. Only apt (Debian/Ubuntu) and apk (Alpine) are supported."
+        log_error "Unsupported distribution. Only apt (Debian/Ubuntu), apk (Alpine), and pacman (Arch) are supported."
         exit 1
     fi
 }
 
-# Map Debian package names to Alpine equivalents
+# Map Debian package names to distro equivalents
 map_pkg() {
     local pkg=$1
-    if [ "$PKG_MANAGER" = "apk" ]; then
-        case "$pkg" in
-            pkg-config)       echo "pkgconfig" ;;
-            libvips-dev)      echo "vips-dev" ;;
-            build-essential)  echo "build-base" ;;
-            python3-virtualenv) echo "py3-virtualenv" ;;
-            python3-dev)      echo "python3-dev" ;;
-            php-cli)          echo "php83-cli" ;;
-            *)                echo "$pkg" ;;
-        esac
-    else
-        echo "$pkg"
-    fi
+    case "$PKG_MANAGER" in
+        apk)
+            case "$pkg" in
+                pkg-config)       echo "pkgconfig" ;;
+                libvips-dev)      echo "vips-dev" ;;
+                build-essential)  echo "build-base" ;;
+                python3-virtualenv) echo "py3-virtualenv" ;;
+                python3-dev)      echo "python3-dev" ;;
+                php-cli)          echo "php83-cli" ;;
+                *)                echo "$pkg" ;;
+            esac
+            ;;
+        pacman)
+            case "$pkg" in
+                pkg-config)       echo "pkgconf" ;;
+                libvips-dev)      echo "libvips" ;;
+                build-essential)  echo "base-devel" ;;
+                python3-virtualenv) echo "python-virtualenv" ;;
+                python3-dev)      echo "python" ;;
+                php-cli)          echo "php" ;;
+                ca-certificates)  echo "ca-certificates" ;;
+                *)                echo "$pkg" ;;
+            esac
+            ;;
+        *)
+            echo "$pkg"
+            ;;
+    esac
 }
 
 # --- Helper Functions ---
