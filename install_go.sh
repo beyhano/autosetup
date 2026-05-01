@@ -9,10 +9,40 @@ DOWNLOAD_URL="https://go.dev/dl/${GO_TARBALL}"
 
 echo "Starting Go installation (version ${GO_VERSION})..."
 
+bootstrap_download_tools() {
+    local missing_deps=()
+
+    if ! command -v wget > /dev/null 2>&1; then
+        missing_deps+=("wget")
+    fi
+
+    if ! command -v wget > /dev/null 2>&1 && ! command -v curl > /dev/null 2>&1; then
+        missing_deps+=("curl")
+    fi
+
+    if [ ${#missing_deps[@]} -gt 0 ]; then
+        echo "Installing missing download dependencies: ${missing_deps[*]}..."
+        sudo apt-get update && sudo apt-get install -y "${missing_deps[@]}"
+    fi
+}
+
+download_go() {
+    if command -v wget > /dev/null 2>&1; then
+        wget -q "$DOWNLOAD_URL" -O "$GO_TARBALL"
+    elif command -v curl > /dev/null 2>&1; then
+        curl -fsSL "$DOWNLOAD_URL" -o "$GO_TARBALL"
+    else
+        echo "Error: Neither wget nor curl is installed."
+        return 1
+    fi
+}
+
+bootstrap_download_tools
+
 # 1. Download Go
 if [ ! -f "$GO_TARBALL" ]; then
     echo "Downloading Go from ${DOWNLOAD_URL}..."
-    wget -q "$DOWNLOAD_URL"
+    download_go
     if [ $? -ne 0 ]; then
         echo "Error: Failed to download Go."
         exit 1

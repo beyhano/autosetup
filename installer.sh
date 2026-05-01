@@ -17,13 +17,25 @@ log_error() {
     echo -e "\e[31m[ERROR]\e[0m $1" >&2
 }
 
+has_downloader() {
+    command -v wget > /dev/null 2>&1 || command -v curl > /dev/null 2>&1
+}
+
 # Download a file if it doesn't exist
 download_tool() {
     local url=$1
     local output=$2
     if [ ! -f "$output" ]; then
         log_info "Downloading from $url..."
-        wget -q "$url" -O "$output"
+        if command -v wget > /dev/null 2>&1; then
+            wget -q "$url" -O "$output"
+        elif command -v curl > /dev/null 2>&1; then
+            curl -fsSL "$url" -o "$output"
+        else
+            log_error "No download tool available. Install wget or curl."
+            return 1
+        fi
+
         if [ $? -ne 0 ]; then
             log_error "Failed to download $url"
             return 1
@@ -158,11 +170,19 @@ install_rust() {
 # Check for and bootstrap core dependencies needed by the script itself
 bootstrap_dependencies() {
     local missing_deps=()
-    for cmd in wget tar sudo grep curl; do
+    for cmd in tar sudo grep; do
         if ! command -v $cmd &> /dev/null; then
             missing_deps+=("$cmd")
         fi
     done
+
+    if ! command -v wget &> /dev/null; then
+        missing_deps+=("wget")
+    fi
+
+    if ! has_downloader; then
+        missing_deps+=("curl")
+    fi
 
     if [ ${#missing_deps[@]} -gt 0 ]; then
         log_info "Missing core dependencies: ${missing_deps[*]}. Attempting to install..."

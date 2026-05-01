@@ -14,7 +14,7 @@ Bu proje, **Ubuntu, Debian ve türevleri** (apt paket yöneticisi kullanan siste
 - **Akıllı İndirme:** Dosya zaten indirilmişse tekrar indirmez.
 - **Güvenli PATH Güncelleme:** `~/.bashrc` dosyasını kontrol eder, eğer yol zaten ekliyse tekrar eklemez.
 - **Renkli Çıktılar:** İşlem adımlarını görsel olarak takip etmeyi kolaylaştırır.
-- **Bağımlılık Kontrolü:** Çalışmadan önce `wget`, `tar` ve `sudo` gibi araçların varlığını kontrol eder.
+- **Bağımlılık Kontrolü:** Çalışmadan önce `wget`, `curl`, `tar` ve `sudo` gibi çekirdek araçları kontrol eder; eksik olanları otomatik kurmayı dener.
 
 ## Kullanım
 
