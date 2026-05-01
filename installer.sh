@@ -4,7 +4,7 @@
 # General Tool Installer Script
 # ==============================================================================
 # This script provides a modular way to download, install, and configure
-# various software tools.
+# various software tools and system dependencies.
 # ==============================================================================
 
 # --- Helper Functions ---
@@ -73,6 +73,29 @@ update_bash_path() {
     fi
 }
 
+# --- System Dependencies ---
+
+install_system_deps() {
+    log_info "--- Installing System Dependencies (apt) ---"
+    
+    # Based on linux.md requirements
+    log_info "Updating package lists..."
+    sudo apt-get update
+    
+    log_info "Installing: ca-certificates, git, pkg-config, libvips-dev..."
+    sudo apt-get install -y --no-install-recommends \
+        ca-certificates \
+        git \
+        pkg-config \
+        libvips-dev
+    
+    if [ $? -ne 0 ]; then
+        log_error "Failed to install system dependencies."
+        return 1
+    fi
+    return 0
+}
+
 # --- Tool Specific Installation: Go ---
 
 install_go() {
@@ -95,7 +118,7 @@ install_go() {
 
 # --- Main Execution ---
 
-# Check for dependencies
+# Check for dependencies needed by the script itself
 for cmd in wget tar sudo grep; do
     if ! command -v $cmd &> /dev/null; then
         log_error "Dependency '$cmd' is missing. Please install it."
@@ -103,8 +126,10 @@ for cmd in wget tar sudo grep; do
     fi
 done
 
-# Run the installation(s)
-# You can easily add more tool functions here
+# 1. Install System Dependencies
+install_system_deps
+
+# 2. Install Tools
 install_go
 
 log_info "Installation process completed."

@@ -5,6 +5,7 @@ Bu proje, Linux sistemlerde çeşitli yazılım araçlarını (Go, Node.js, vb.)
 ## Özellikler
 
 - **Modüler Yapı:** İndirme, çıkarma ve PATH güncelleme işlemleri için ayrı fonksiyonlar kullanılır.
+- **Sistem Bağımlılıkları:** `linux.md` içerisindeki gereksinimlere göre `libvips-dev`, `pkg-config`, `git` ve `ca-certificates` gibi paketleri otomatik kurar.
 - **Akıllı İndirme:** Dosya zaten indirilmişse tekrar indirmez.
 - **Güvenli PATH Güncelleme:** `~/.bashrc` dosyasını kontrol eder, eğer yol zaten ekliyse tekrar eklemez.
 - **Renkli Çıktılar:** İşlem adımlarını görsel olarak takip etmeyi kolaylaştırır.
@@ -21,6 +22,7 @@ Bu proje, Linux sistemlerde çeşitli yazılım araçlarını (Go, Node.js, vb.)
     ```bash
     ./installer.sh
     ```
+    *(Not: Sistem güncellemeleri ve kurulumlar için sudo şifresi istenecektir.)*
 4.  **PATH Güncellemesini Uygulayın:** Kurulum bittikten sonra değişikliklerin geçerli olması için:
     ```bash
     source ~/.bashrc
@@ -50,4 +52,5 @@ install_example() {
 
 - `installer.sh`: Ana kurulum betiği.
 - `go.md`: Go kurulumu için temel alınan orijinal dökümantasyon.
+- `linux.md`: Gerekli sistem paketlerinin listesi.
 - `README.md`: Bu bilgilendirme dosyası.
