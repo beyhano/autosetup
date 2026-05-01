@@ -170,4 +170,13 @@ install_go
 install_rust
 
 log_info "Installation process completed."
-log_info "Please run 'source ~/.bashrc' to apply PATH changes."
+
+# Apply changes to the current script environment
+if [ -f "$HOME/.bashrc" ]; then
+    log_info "Sourcing $HOME/.bashrc..."
+    source "$HOME/.bashrc"
+fi
+
+log_info "All tools are installed and PATH is updated."
+log_info "NOTE: If you ran this script as './installer.sh', please run 'source ~/.bashrc' MANUALLY to use the tools in this session."
+log_info "Alternatively, you can run the script as 'source ./installer.sh' next time."

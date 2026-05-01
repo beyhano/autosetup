@@ -21,12 +21,13 @@ Bu proje, Linux sistemlerde çeşitli yazılım araçlarını (Go, Rust, Node.js
     chmod +x installer.sh
     ```
 3.  **Betiği Çalıştırın:**
+    Değişikliklerin anında mevcut terminalinize yansıması için `source` ile çalıştırmanız önerilir:
+    ```bash
+    source ./installer.sh
+    ```
+    Veya normal şekilde çalıştırıp sonra manuel source yapabilirsiniz:
     ```bash
     ./installer.sh
-    ```
-    *(Not: Sistem güncellemeleri ve kurulumlar için sudo şifresi istenecektir.)*
-4.  **PATH Güncellemesini Uygulayın:** Kurulum bittikten sonra değişikliklerin geçerli olması için:
-    ```bash
     source ~/.bashrc
     ```
 
