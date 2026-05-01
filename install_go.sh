@@ -1,4 +1,18 @@
-#!/bin/bash
+#!/bin/sh
+# Bootstrap: ensure bash is available, then re-execute.
+if [ -z "${BASH_VERSION:-}" ]; then
+    if ! command -v bash >/dev/null 2>&1; then
+        printf '[INFO] bash is required, installing...\n'
+        if [ -f /etc/alpine-release ]; then
+            apk add --no-cache bash
+        elif command -v apt-get >/dev/null 2>&1; then
+            apt-get update && apt-get install -y bash
+        elif command -v pacman >/dev/null 2>&1; then
+            pacman -Sy --noconfirm bash
+        fi
+    fi
+    exec bash "$0" "$@"
+fi
 
 # Go Installation Script
 # Based on instructions from go.md
