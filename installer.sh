@@ -123,10 +123,39 @@ install_go() {
     go version
 }
 
+# --- Tool Specific Installation: Rust ---
+
+install_rust() {
+    log_info "--- Installing Rust (rustup) ---"
+    
+    # Rust is usually installed via rustup script
+    if ! command -v rustup &> /dev/null; then
+        log_info "Downloading and running rustup installer..."
+        # -s -- -y is used for non-interactive installation
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        
+        if [ $? -ne 0 ]; then
+            log_error "Failed to install Rust via rustup."
+            return 1
+        fi
+    else
+        log_info "Rust is already installed, updating..."
+        rustup update
+    fi
+
+    # Add Cargo bin to PATH
+    local cargo_bin="$HOME/.cargo/bin"
+    update_bash_path "$cargo_bin"
+    
+    # Verify in current session
+    export PATH="$PATH:$cargo_bin"
+    rustc --version
+}
+
 # --- Main Execution ---
 
 # Check for dependencies needed by the script itself
-for cmd in wget tar sudo grep; do
+for cmd in wget tar sudo grep curl; do
     if ! command -v $cmd &> /dev/null; then
         log_error "Dependency '$cmd' is missing. Please install it."
         exit 1
@@ -138,6 +167,7 @@ install_system_deps
 
 # 2. Install Tools
 install_go
+install_rust
 
 log_info "Installation process completed."
 log_info "Please run 'source ~/.bashrc' to apply PATH changes."

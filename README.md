@@ -1,11 +1,13 @@
 # General Tool Installer
 
-Bu proje, Linux sistemlerde çeşitli yazılım araçlarını (Go, Node.js, vb.) hızlı ve modüler bir şekilde kurmak için tasarlanmış genel amaçlı bir Bash betiğidir.
+Bu proje, Linux sistemlerde çeşitli yazılım araçlarını (Go, Rust, Node.js, vb.) hızlı ve modüler bir şekilde kurmak için tasarlanmış genel amaçlı bir Bash betiğidir.
 
 ## Özellikler
 
 - **Modüler Yapı:** İndirme, çıkarma ve PATH güncelleme işlemleri için ayrı fonksiyonlar kullanılır.
+- **Dil Desteği:** Go ve Rust dillerini otomatik olarak kurar ve yapılandırır.
 - **Sistem Bağımlılıkları:** `linux.md` ve ek gereksinimlere göre `libvips-dev`, `pkg-config`, `git`, `curl`, `wget`, `build-essential`, `python3`, `python3-dev`, `python3-virtualenv` ve `supervisor` gibi paketleri otomatik kurar.
+
 - **Akıllı İndirme:** Dosya zaten indirilmişse tekrar indirmez.
 - **Güvenli PATH Güncelleme:** `~/.bashrc` dosyasını kontrol eder, eğer yol zaten ekliyse tekrar eklemez.
 - **Renkli Çıktılar:** İşlem adımlarını görsel olarak takip etmeyi kolaylaştırır.
@@ -52,5 +54,6 @@ install_example() {
 
 - `installer.sh`: Ana kurulum betiği.
 - `go.md`: Go kurulumu için temel alınan orijinal dökümantasyon.
+- `rust.md`: Rust kurulumu için temel alınan orijinal dökümantasyon.
 - `linux.md`: Gerekli sistem paketlerinin listesi.
 - `README.md`: Bu bilgilendirme dosyası.
