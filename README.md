@@ -15,6 +15,7 @@ Bu proje, **Ubuntu, Debian ve türevleri** (apt paket yöneticisi kullanan siste
 - **Güvenli PATH Güncelleme:** `~/.bashrc` dosyasını kontrol eder, eğer yol zaten ekliyse tekrar eklemez.
 - **Renkli Çıktılar:** İşlem adımlarını görsel olarak takip etmeyi kolaylaştırır.
 - **Bağımlılık Kontrolü:** Çalışmadan önce `wget`, `curl`, `tar` ve `sudo` gibi çekirdek araçları kontrol eder; eksik olanları otomatik kurmayı dener.
+- **Dry-Run Desteği:** `--dry-run` ile sistemi değiştirmeden hangi komutların çalışacağını gösterir.
 
 ## Kullanım
 
@@ -32,6 +33,12 @@ Bu proje, **Ubuntu, Debian ve türevleri** (apt paket yöneticisi kullanan siste
     ```bash
     ./installer.sh
     source ~/.bashrc
+    ```
+
+4.  **Dry-Run Kullanımı:**
+    Gerçek kurulum yapmadan hangi adımların çalışacağını görmek için:
+    ```bash
+    ./installer.sh --dry-run
     ```
 
 ## Yeni Bir Araç Ekleme

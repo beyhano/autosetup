@@ -9,12 +9,63 @@
 
 # --- Helper Functions ---
 
+DRY_RUN=false
+
+parse_args() {
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --dry-run|-n)
+                DRY_RUN=true
+                ;;
+            --help|-h)
+                cat <<'EOF'
+Usage: ./installer.sh [--dry-run]
+
+Options:
+  -n, --dry-run  Print the commands that would run without changing the system.
+  -h, --help     Show this help message.
+EOF
+                exit 0
+                ;;
+            *)
+                log_error "Unknown argument: $1"
+                exit 1
+                ;;
+        esac
+        shift
+    done
+}
+
 log_info() {
     echo -e "\e[32m[INFO]\e[0m $1"
 }
 
 log_error() {
     echo -e "\e[31m[ERROR]\e[0m $1" >&2
+}
+
+run_cmd() {
+    if [ "$DRY_RUN" = true ]; then
+        printf '[DRY-RUN]'
+        for arg in "$@"; do
+            printf ' %q' "$arg"
+        done
+        printf '\n'
+        return 0
+    fi
+
+    "$@"
+}
+
+run_shell_cmd() {
+    local command_string=$1
+
+    if [ "$DRY_RUN" = true ]; then
+        printf '[DRY-RUN] %s\n' "$command_string"
+        return 0
+    fi
+
+    eval "$command_string"
 }
 
 has_downloader() {
@@ -28,9 +79,9 @@ download_tool() {
     if [ ! -f "$output" ]; then
         log_info "Downloading from $url..."
         if command -v wget > /dev/null 2>&1; then
-            wget -q "$url" -O "$output"
+            run_cmd wget -q "$url" -O "$output"
         elif command -v curl > /dev/null 2>&1; then
-            curl -fsSL "$url" -o "$output"
+            run_cmd curl -fsSL "$url" -o "$output"
         else
             log_error "No download tool available. Install wget or curl."
             return 1
@@ -54,13 +105,13 @@ install_tarball() {
 
     if [ "$remove_old" = true ]; then
         log_info "Removing old installation at $target_dir..."
-        sudo rm -rf "$target_dir"
+        run_cmd sudo rm -rf "$target_dir"
     fi
 
     log_info "Extracting $tarball to $(dirname "$target_dir")..."
     # Ensure parent directory exists
-    sudo mkdir -p "$(dirname "$target_dir")"
-    sudo tar -C "$(dirname "$target_dir")" -xzf "$tarball"
+    run_cmd sudo mkdir -p "$(dirname "$target_dir")"
+    run_cmd sudo tar -C "$(dirname "$target_dir")" -xzf "$tarball"
     
     if [ $? -ne 0 ]; then
         log_error "Failed to extract $tarball"
@@ -75,11 +126,14 @@ update_bash_path() {
     local profile_file="${2:-$HOME/.bashrc}"
     local path_line="export PATH=\$PATH:$bin_path"
 
+    if [ ! -f "$profile_file" ]; then
+        log_info "$profile_file does not exist, creating it..."
+        run_cmd touch "$profile_file"
+    fi
+
     if ! grep -q "$bin_path" "$profile_file"; then
         log_info "Adding $bin_path to PATH in $profile_file..."
-        echo "" >> "$profile_file"
-        echo "# Added by General Installer" >> "$profile_file"
-        echo "$path_line" >> "$profile_file"
+        run_shell_cmd "printf '\n# Added by General Installer\n%s\n' \"$path_line\" >> \"$profile_file\""
     else
         log_info "$bin_path is already in $profile_file PATH."
     fi
@@ -92,10 +146,10 @@ install_system_deps() {
     
     # Based on linux.md and additional requirements
     log_info "Updating package lists..."
-    sudo apt-get update
+    run_cmd sudo apt-get update
     
     log_info "Installing system packages..."
-    sudo apt-get install -y --no-install-recommends \
+    run_cmd sudo apt-get install -y --no-install-recommends \
         ca-certificates \
         git \
         pkg-config \
@@ -132,8 +186,12 @@ install_go() {
     update_bash_path "$bin_dir"
     
     # Verify in current session
-    export PATH=$PATH:$bin_dir
-    go version
+    if [ "$DRY_RUN" = true ]; then
+        log_info "[DRY-RUN] Would verify Go with: PATH=\$PATH:$bin_dir go version"
+    else
+        export PATH=$PATH:$bin_dir
+        go version
+    fi
 }
 
 # --- Tool Specific Installation: Rust ---
@@ -145,7 +203,7 @@ install_rust() {
     if ! command -v rustup &> /dev/null; then
         log_info "Downloading and running rustup installer..."
         # -s -- -y is used for non-interactive installation
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        run_shell_cmd "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
         
         if [ $? -ne 0 ]; then
             log_error "Failed to install Rust via rustup."
@@ -153,7 +211,7 @@ install_rust() {
         fi
     else
         log_info "Rust is already installed, updating..."
-        rustup update
+        run_cmd rustup update
     fi
 
     # Add Cargo bin to PATH
@@ -161,8 +219,12 @@ install_rust() {
     update_bash_path "$cargo_bin"
     
     # Verify in current session
-    export PATH="$PATH:$cargo_bin"
-    rustc --version
+    if [ "$DRY_RUN" = true ]; then
+        log_info "[DRY-RUN] Would verify Rust with: PATH=\$PATH:$cargo_bin rustc --version"
+    else
+        export PATH="$PATH:$cargo_bin"
+        rustc --version
+    fi
 }
 
 # --- Main Execution ---
@@ -186,8 +248,8 @@ bootstrap_dependencies() {
 
     if [ ${#missing_deps[@]} -gt 0 ]; then
         log_info "Missing core dependencies: ${missing_deps[*]}. Attempting to install..."
-        sudo apt-get update
-        sudo apt-get install -y "${missing_deps[@]}"
+        run_cmd sudo apt-get update
+        run_cmd sudo apt-get install -y "${missing_deps[@]}"
         
         if [ $? -ne 0 ]; then
             log_error "Failed to install required dependencies: ${missing_deps[*]}. Please install them manually."
@@ -195,6 +257,8 @@ bootstrap_dependencies() {
         fi
     fi
 }
+
+parse_args "$@"
 
 bootstrap_dependencies
 
@@ -210,7 +274,11 @@ log_info "Installation process completed."
 # Apply changes to the current script environment
 if [ -f "$HOME/.bashrc" ]; then
     log_info "Sourcing $HOME/.bashrc..."
-    source "$HOME/.bashrc"
+    if [ "$DRY_RUN" = true ]; then
+        log_info "[DRY-RUN] Would source $HOME/.bashrc"
+    else
+        source "$HOME/.bashrc"
+    fi
 fi
 
 log_info "All tools are installed and PATH is updated."
