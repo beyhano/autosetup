@@ -78,16 +78,23 @@ update_bash_path() {
 install_system_deps() {
     log_info "--- Installing System Dependencies (apt) ---"
     
-    # Based on linux.md requirements
+    # Based on linux.md and additional requirements
     log_info "Updating package lists..."
     sudo apt-get update
     
-    log_info "Installing: ca-certificates, git, pkg-config, libvips-dev..."
+    log_info "Installing system packages..."
     sudo apt-get install -y --no-install-recommends \
         ca-certificates \
         git \
         pkg-config \
-        libvips-dev
+        libvips-dev \
+        curl \
+        wget \
+        build-essential \
+        python3 \
+        python3-dev \
+        python3-virtualenv \
+        supervisor
     
     if [ $? -ne 0 ]; then
         log_error "Failed to install system dependencies."
