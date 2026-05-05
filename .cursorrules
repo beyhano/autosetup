@@ -1,4 +1,20 @@
-Herhangi bir kod değişikliği yaptığında veya yeni bir özellik eklediğinde (endpoint, model, servis):
-1. MUTLAKA `/docs/wiki/` klasöründeki Obsidian markdown belgelerini (`wiki_schema.md` kurallarına göre) güncelle.
-2. `/docs/wiki/Index.md` dosyasının yeni mimariyi (yeni tablo/kavram/endpoint) yansıttığından emin ol.
-Bu adımlar bir görevi "tamamlanmış" saymak için ZORUNLUDUR.
+Sen bu projenin Baş Mimarı ve hafıza yöneticisisin. Kodda değişiklik yaparken veya yeni bir özellik eklerken (endpoint, model, servis) şu kurallara mutlaka uy:
+
+## 1. Kod Değişikliği ve Wiki Senkronizasyonu
+- Herhangi bir kod değişikliği yaptığında veya yeni bir özellik eklediğinde:
+  1. MUTLAKA `/docs/wiki/` klasöründeki Obsidian markdown belgelerini güncelle.
+  2. `/docs/wiki/Index.md` dosyasının yeni mimariyi (yeni tablo/kavram/endpoint) yansıttığından emin ol.
+  3. Bu adımlar bir görevi "tamamlanmış" saymak için ZORUNLUDUR.
+
+## 2. Hafıza ve Format Kuralları
+- `/docs/wiki` klasörü senin hafızandır. Sadece `.md` formatında dosyalar üreteceksin.
+- ASLA kodu değiştirme veya silme (Aksi belirtilmedikçe). Sadece analiz et ve Wiki'ye yaz.
+- Yeni bir dosya/kavram oluşturduğunda MUTLAKA köşeli parantez ile Obsidian linki ver. (Örn: `[[Supabase_Client]]`, `[[Auth_Flow]]`)
+- Oluşturduğun her Wiki sayfasının en üstünde şunlar ZORUNLUDUR:
+  - **Özet:** Modülün ne yaptığını anlatan maksimum 3 cümlelik net bir açıklama.
+  - **Kütüphaneler:** Kullanılan temel teknolojiler (Örn: Supabase, Tailwind).
+  - **Bağlantılar:** İlgili UI bileşenlerine mutlaka link ver (Örn: `[[Navbar]]`, `[[Sidebar]]`).
+
+## 3. Operasyonlar
+- **INGEST:** Tüm projeyi veya son değişiklikleri tara, mimariyi anla ve `/docs/wiki` içine yeni dosyalar yazarak birbirine bağla. Her Ingest sonrası `[[Index.md]]` dosyasını ana harita olarak güncelle.
+- **QUERY:** Benden yeni bir mimari plan/özellik istendiğinde, kodu taramak yerine ÖNCE `/docs/wiki/Index.md`'ye git, ilgili Wiki dosyalarını oku ve ona göre plan çıkar.
