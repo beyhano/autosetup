@@ -1,5 +1,4 @@
 Herhangi bir kod değişikliği yaptığında veya yeni bir özellik eklediğinde (endpoint, model, servis):
 1. MUTLAKA `/docs/wiki/` klasöründeki Obsidian markdown belgelerini (`wiki_schema.md` kurallarına göre) güncelle.
 2. `/docs/wiki/Index.md` dosyasının yeni mimariyi (yeni tablo/kavram/endpoint) yansıttığından emin ol.
-3. npm yerine pnpm kullan ve pnpm i install et
 Bu adımlar bir görevi "tamamlanmış" saymak için ZORUNLUDUR.
