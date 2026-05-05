@@ -77,6 +77,7 @@ map_pkg() {
                 python3-virtualenv) echo "py3-virtualenv" ;;
                 python3-dev)      echo "python3-dev" ;;
                 php-cli)          echo "php83-cli" ;;
+                gnupg)            echo "gnupg" ;;
                 *)                echo "$pkg" ;;
             esac
             ;;
@@ -89,6 +90,7 @@ map_pkg() {
                 python3-dev)      echo "python" ;;
                 php-cli)          echo "php" ;;
                 ca-certificates)  echo "ca-certificates" ;;
+                gnupg)            echo "gnupg" ;;
                 *)                echo "$pkg" ;;
             esac
             ;;
@@ -253,6 +255,7 @@ install_system_deps() {
         python3-virtualenv
         supervisor
         php-cli
+        gnupg
     )
     
     local mapped_pkgs=()
@@ -326,6 +329,146 @@ install_rust() {
     fi
 }
 
+# --- Tool Specific Installation: Node.js ---
+
+install_nodejs() {
+    log_info "--- Installing Node.js (via nvm) ---"
+    
+    local nvm_version="v0.40.4"
+    local node_version="24"
+    
+    # Install nvm if not already installed
+    if [ ! -d "$HOME/.nvm" ]; then
+        log_info "Installing nvm (Node Version Manager)..."
+        run_shell_cmd "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/${nvm_version}/install.sh | bash"
+        
+        if [ $? -ne 0 ]; then
+            log_error "Failed to install nvm."
+            return 1
+        fi
+    else
+        log_info "nvm is already installed."
+    fi
+    
+    # Load nvm
+    log_info "Loading nvm..."
+    if [ "$DRY_RUN" = true ]; then
+        log_info "[DRY-RUN] Would load nvm with: \\. \"$HOME/.nvm/nvm.sh\""
+    else
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    fi
+    
+    # Install Node.js using nvm
+    log_info "Installing Node.js $node_version via nvm..."
+    if [ "$DRY_RUN" = true ]; then
+        log_info "[DRY-RUN] Would install Node.js with: nvm install $node_version"
+    else
+        run_shell_cmd "nvm install $node_version"
+        
+        if [ $? -ne 0 ]; then
+            log_error "Failed to install Node.js via nvm."
+            return 1
+        fi
+        
+        # Set as default version
+        run_shell_cmd "nvm use $node_version"
+        run_shell_cmd "nvm alias default $node_version"
+    fi
+    
+    # Add nvm initialization to profile
+    local nvm_init_line='export NVM_DIR="$HOME/.nvm"'
+    local nvm_source_line='[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"'
+    
+    if ! grep -q "NVM_DIR" "$PROFILE_FILE"; then
+        log_info "Adding nvm initialization to $PROFILE_FILE..."
+        run_shell_cmd "printf '\n# Added by General Installer (nvm)\n%s\n%s\n' \"$nvm_init_line\" \"$nvm_source_line\" >> \"$PROFILE_FILE\""
+    else
+        log_info "nvm initialization already in $PROFILE_FILE."
+    fi
+    
+    # Verify installation
+    if [ "$DRY_RUN" = true ]; then
+        log_info "[DRY-RUN] Would verify Node.js with: node --version && npm --version"
+    else
+        node --version
+        npm --version
+    fi
+}
+
+# --- Tool Specific Installation: Docker Engine ---
+
+install_docker() {
+    log_info "--- Installing Docker Engine ---"
+    
+    case "$PKG_MANAGER" in
+        apt)
+            # Install prerequisites
+            log_info "Installing Docker prerequisites..."
+            run_cmd $SUDO_CMD apt-get install -y ca-certificates curl gnupg
+            
+            # Add Docker's official GPG key
+            log_info "Adding Docker GPG key..."
+            run_cmd $SUDO_CMD install -m 0755 -d /etc/apt/keyrings
+            run_shell_cmd "curl -fsSL https://download.docker.com/linux/$($SUDO_CMD . /etc/os-release && echo \"$ID\")/gpg | $SUDO_CMD gpg --dearmor -o /etc/apt/keyrings/docker.gpg"
+            run_cmd $SUDO_CMD chmod a+r /etc/apt/keyrings/docker.gpg
+            
+            # Set up Docker repository
+            log_info "Setting up Docker repository..."
+            run_shell_cmd "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$($SUDO_CMD . /etc/os-release && echo \"$ID\") $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | $SUDO_CMD tee /etc/apt/sources.list.d/docker.list > /dev/null"
+            
+            # Install Docker Engine
+            log_info "Installing Docker Engine packages..."
+            run_cmd $SUDO_CMD apt-get update
+            run_cmd $SUDO_CMD apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            ;;
+        apk)
+            # Alpine uses community repository
+            log_info "Installing Docker on Alpine..."
+            run_cmd $SUDO_CMD apk add --no-cache docker docker-cli-compose
+            ;;
+        pacman)
+            # Arch uses extra repository
+            log_info "Installing Docker on Arch..."
+            run_cmd $SUDO_CMD pacman -S --noconfirm --needed docker docker-compose
+            ;;
+        *)
+            log_error "Unsupported package manager for Docker installation."
+            return 1
+            ;;
+    esac
+    
+    if [ $? -ne 0 ]; then
+        log_error "Failed to install Docker Engine."
+        return 1
+    fi
+    
+    # Enable and start Docker service
+    log_info "Enabling and starting Docker service..."
+    if command -v systemctl > /dev/null 2>&1; then
+        run_cmd $SUDO_CMD systemctl enable docker
+        run_cmd $SUDO_CMD systemctl start docker
+    elif command -v rc-update > /dev/null 2>&1; then
+        # Alpine OpenRC
+        run_cmd $SUDO_CMD rc-update add docker boot
+        run_cmd $SUDO_CMD service docker start
+    fi
+    
+    # Add current user to docker group (non-interactive)
+    if [ -n "$USER" ] && [ "$USER" != "root" ]; then
+        log_info "Adding user $USER to docker group..."
+        run_cmd $SUDO_CMD usermod -aG docker "$USER"
+        log_info "NOTE: You may need to log out and log back in for group changes to take effect."
+    fi
+    
+    # Verify installation
+    if [ "$DRY_RUN" = true ]; then
+        log_info "[DRY-RUN] Would verify Docker with: docker --version"
+    else
+        docker --version
+    fi
+}
+
 # --- Main Execution ---
 
 # Check for and bootstrap core dependencies needed by the script itself
@@ -376,6 +519,8 @@ install_system_deps
 # 2. Install Tools
 install_go
 install_rust
+install_nodejs
+install_docker
 
 log_info "Installation process completed."
 
