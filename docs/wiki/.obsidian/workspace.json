@@ -11,14 +11,10 @@
             "id": "35192f68f9b2cb67",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Refs/Docker_Ubuntu.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Docker_Ubuntu"
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Grafik Görünümü"
             }
           }
         ]
@@ -94,7 +90,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Refs/Docker_Ubuntu.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +99,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Docker_Ubuntu için geri bağlantılar"
+              "title": "Geri Bağlantılar"
             }
           },
           {
@@ -113,12 +108,11 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Refs/Docker_Ubuntu.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Docker_Ubuntu'dan giden bağlantılar"
+              "title": "Giden bağlantılar"
             }
           },
           {
@@ -156,13 +150,12 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Refs/Docker_Ubuntu.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Docker_Ubuntu ana hatları"
+              "title": "Anahat"
             }
           }
         ]
@@ -185,6 +178,7 @@
   },
   "active": "35192f68f9b2cb67",
   "lastOpenFiles": [
+    "Refs/Docker_Ubuntu.md",
     "Refs/Docker_Debian.md",
     "Tools/System_Dependencies.md",
     "Index.md",
