@@ -407,15 +407,20 @@ install_docker() {
             log_info "Installing Docker prerequisites..."
             run_cmd $SUDO_CMD apt-get install -y ca-certificates curl gnupg
             
+            # Read OS info (no sudo needed, file is world-readable)
+            local docker_distro docker_codename
+            docker_distro="$(. /etc/os-release && echo "$ID")"
+            docker_codename="$(. /etc/os-release && echo "$VERSION_CODENAME")"
+            
             # Add Docker's official GPG key
             log_info "Adding Docker GPG key..."
             run_cmd $SUDO_CMD install -m 0755 -d /etc/apt/keyrings
-            run_shell_cmd "curl -fsSL https://download.docker.com/linux/$($SUDO_CMD . /etc/os-release && echo \"$ID\")/gpg | $SUDO_CMD gpg --dearmor -o /etc/apt/keyrings/docker.gpg"
+            run_shell_cmd "curl -fsSL https://download.docker.com/linux/${docker_distro}/gpg | $SUDO_CMD gpg --dearmor -o /etc/apt/keyrings/docker.gpg"
             run_cmd $SUDO_CMD chmod a+r /etc/apt/keyrings/docker.gpg
             
             # Set up Docker repository
             log_info "Setting up Docker repository..."
-            run_shell_cmd "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$($SUDO_CMD . /etc/os-release && echo \"$ID\") $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | $SUDO_CMD tee /etc/apt/sources.list.d/docker.list > /dev/null"
+            run_shell_cmd "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/${docker_distro} ${docker_codename} stable\" | $SUDO_CMD tee /etc/apt/sources.list.d/docker.list > /dev/null"
             
             # Install Docker Engine
             log_info "Installing Docker Engine packages..."
